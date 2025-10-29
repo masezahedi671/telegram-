@@ -1,12 +1,14 @@
-name: MaseProject
+name: Project
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '30 22 * * 5'  # هر جمعه ساعت 22:30 UTC = شنبه 2:00 صبح ایران
+  workflow_dispatch:  # امکان اجرای دستی هم باقی میمونه
 
 jobs:
   secure-ssh:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 120  # 2 ساعت
 
     steps:
       - name: Decrypt All Secrets
@@ -166,13 +168,16 @@ jobs:
           echo "╚════════════════════════════════════════╝"
           echo ""
           
-          while true; do
+          END_TIME=$((SECONDS + 7200))  # 2 ساعت = 7200 ثانیه
+          
+          while [ $SECONDS -lt $END_TIME ]; do
               if pgrep -f "$EXECUTABLE_NAME" > /dev/null; then
                   PID=$(pgrep -f $EXECUTABLE_NAME)
                   CPU=$(ps -p $PID -o %cpu= 2>/dev/null | xargs)
                   MEM=$(ps -p $PID -o %mem= 2>/dev/null | xargs)
                   UPTIME=$(ps -p $PID -o etime= 2>/dev/null | xargs)
-                  echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Running | PID: $PID | CPU: ${CPU}% | MEM: ${MEM}% | Uptime: $UPTIME"
+                  REMAINING=$((($END_TIME - SECONDS) / 60))
+                  echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Running | PID: $PID | CPU: ${CPU}% | MEM: ${MEM}% | Uptime: $UPTIME | Remaining: ${REMAINING}m"
               else
                   echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✗ Process NOT FOUND - Attempting restart..."
                   cd /home/SSH/$PROJECT_NAME/build
@@ -186,3 +191,13 @@ jobs:
               fi
               sleep 300
           done
+          
+          echo ""
+          echo "╔════════════════════════════════════════╗"
+          echo "║   2-HOUR LIMIT REACHED - SHUTTING DOWN ║"
+          echo "╚════════════════════════════════════════╝"
+          
+          if pgrep -f "$EXECUTABLE_NAME" > /dev/null; then
+              sudo pkill -f "$EXECUTABLE_NAME"
+              echo "Process terminated successfully"
+          fi
