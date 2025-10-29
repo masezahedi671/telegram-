@@ -1,4 +1,4 @@
-name: Project
+name: Run Masoud EXE with Detailed Logs
 
 on:
   schedule:
@@ -150,11 +150,22 @@ jobs:
               }
               
               $remaining = ($endTime - (Get-Date)).TotalMinutes
-              $cpu = (Get-Process -Id $process.Id -ErrorAction SilentlyContinue | Select-Object -ExpandProperty CPU)
-              $mem = (Get-Process -Id $process.Id -ErrorAction SilentlyContinue | Select-Object -ExpandProperty WorkingSet64)
-              $memMB = [math]::Round($mem/1MB, 2)
+              $cpuTime = 0
+              $memMB = 0
               
-              Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] ✓ Running | PID: $($process.Id) | CPU: $([math]::Round($cpu, 2))s | MEM: $memMB MB | Remaining: $([math]::Round($remaining, 0))m"
+              try {
+                $proc = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
+                if ($proc) {
+                  $cpuTime = [math]::Round($proc.CPU, 2)
+                  $memMB = [math]::Round($proc.WorkingSet64/1MB, 2)
+                }
+              } catch {
+                # Ignore errors
+              }
+              
+              $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+              $remainingMin = [math]::Round($remaining, 0)
+              Write-Host "[$timestamp] Running | PID: $($process.Id) | CPU: ${cpuTime}s | MEM: ${memMB} MB | Remaining: ${remainingMin}m"
               
               Start-Sleep -Seconds $checkInterval
             }
@@ -175,11 +186,14 @@ jobs:
             Write-Host ""
             Write-Host "[*] Program output (last 100 lines):"
             Write-Host "======================================"
-            Get-Content C:\app\masoud_output.log -Tail 100 -ErrorAction SilentlyContinue
+            if (Test-Path C:\app\masoud_output.log) {
+              Get-Content C:\app\masoud_output.log -Tail 100 -ErrorAction SilentlyContinue
+            }
             Write-Host "======================================"
             
           } catch {
-            Write-Host "[ERR] Exception while running program: $($_.Exception.Message)"
+            $errMsg = $_.Exception.Message
+            Write-Host "[ERR] Exception while running program: $errMsg"
             exit 1
           }
 
