@@ -1,4 +1,4 @@
-name: Run Masoud EXE with Detailed Logs
+name: Project
 
 on:
   schedule:
