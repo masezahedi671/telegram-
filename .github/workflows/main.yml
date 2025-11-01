@@ -2,13 +2,13 @@ name: Project
 
 on:
   schedule:
-    - cron: '30 22 * * 5'  # هر جمعه ساعت 22:30 UTC = شنبه 2:00 صبح ایران
+    - cron: '30 23 */2 * *'  # هر دو روز یکبار ساعت 23:30 UTC = 3:00 صبح به وقت ایران
   workflow_dispatch:
 
 jobs:
   run-masoud:
     runs-on: windows-latest
-    timeout-minutes: 120  # 2 ساعت
+    timeout-minutes: 300  # 2 ساعت
 
     steps:
       - name: Prepare log folder
