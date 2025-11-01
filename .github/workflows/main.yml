@@ -2,13 +2,13 @@ name: Project
 
 on:
   schedule:
-    - cron: '30 23 */2 * *'  # هر دو روز یکبار ساعت 23:30 UTC = 3:00 صبح به وقت ایران
+    - cron: '30 22 */2 * *'  # هر دو روز یکبار ساعت 23:30 UTC = 3:00 صبح به وقت ایران
   workflow_dispatch:
 
 jobs:
   run-masoud:
     runs-on: windows-latest
-    timeout-minutes: 300  # 2 ساعت
+    timeout-minutes: 300  # 5 ساعت
 
     steps:
       - name: Prepare log folder
@@ -120,7 +120,7 @@ jobs:
           Write-Host "[OK] Found masoud.exe at: $path"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "exePath=$path"
 
-      - name: Run masoud.exe with 2-hour limit
+      - name: Run masoud.exe with 5-hour limit
         shell: powershell
         run: |
           $exePath = '${{ steps.findexe.outputs.exePath }}'
@@ -130,7 +130,7 @@ jobs:
             exit 1
           }
           
-          Write-Host "[*] Running masoud.exe for 2 hours..."
+          Write-Host "[*] Running masoud.exe for 5 hours..."
           Write-Host "[*] Path: $exePath"
           Write-Host "[*] Start time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
           
@@ -138,7 +138,7 @@ jobs:
             $process = Start-Process -FilePath $exePath -NoNewWindow -PassThru -RedirectStandardOutput C:\app\masoud_output.log -RedirectStandardError C:\app\masoud_error.log
             Write-Host "[OK] Process started with PID: $($process.Id)"
             
-            $endTime = (Get-Date).AddHours(2)
+            $endTime = (Get-Date).AddHours(5)
             $checkInterval = 60
             
             while ((Get-Date) -lt $endTime) {
@@ -172,7 +172,7 @@ jobs:
             
             Write-Host ""
             Write-Host "======================================"
-            Write-Host "  2-HOUR LIMIT REACHED - STOPPING"
+            Write-Host "  5-HOUR LIMIT REACHED - STOPPING"
             Write-Host "======================================"
             
             if (-not $process.HasExited) {
